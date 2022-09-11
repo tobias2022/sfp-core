@@ -1,0 +1,84 @@
+pipeline {
+    agent any   
+    environment {
+        PROJECT = "easycrm"
+    }
+
+    options {
+		// Keep maximum 10 archievd artifacts
+		buildDiscarder(logRotator(numToKeepStr:'10', artifactNumToKeepStr:'10'))
+		// No simultaneous builds
+		disableConcurrentBuilds()
+		durabilityHint('MAX_SURVIVABILITY') // PERFORMANCE_OPTIMIZED or SURVIVABLE_NONATOMIC
+	}
+
+    stages {
+
+        stage('Build and Unit Testing') {
+            steps{
+
+                echo 'Building...'
+
+                script{
+                    def buildEnv = docker.build "easycrm:${currentBuild.number}"
+
+                    echo "easycrm:${currentBuild.number}"
+                    echo 'unit testing...'
+
+                    buildEnv.inside {
+                        sh "echo '# ${currentBuild.number} Build testing result: \n' > test_result.txt"
+                        // sh "npm run test -- --coverage --watchAll=false >> test_result.txt"
+                    }
+                }
+            }
+        }
+
+
+        stage('Integration Test'){
+            steps {
+                echo 'Integration test'
+            }
+        }
+
+        stage('Push docker image'){
+            steps {
+                echo 'make docker image'
+                script{
+                    def image = docker.build("tobias2022/easycrm:${currentBuild.number}","--build-arg mongodb='mongodb+srv://tobias:Nk19950913@easycrm.x516p.mongodb.net/crmdb?retryWrites=true&w=majority' ." )
+
+                    echo 'push docker image to docker hub'
+
+                    docker.withRegistry('https://registry-1.docker.io/v2/', 'docker-hub-credentials-tobias'){
+                        image.push()
+                        image.push 'latest'
+                    }
+
+                }
+            }
+        }
+
+
+
+
+    }
+    post {
+		    success {
+			    
+			    echo 'Success.'
+			    emailext attachLog: false,
+			    to: "${EASYCRM_DEVELOPERS}, cc:${CC_RECIPIENTS}",
+			    replyTo: "${DEVOPS_TEAM}",
+			    body: 'Success! ${DEFAULT_CONTENT}',
+			    subject:'${PROJECT_NAME} - Build # ${BUILD_NUMBER} - ${BUILD_STATUS}!'
+		    }
+		    failure {
+			    
+			    echo 'Failure.'
+			    emailext attachLog: true,
+			    to: "${EASYCRM_UAT_DEVELOPERS}, cc:${CC_RECIPIENTS}",
+			    replyTo: "${DEVOPS_TEAM}",
+			    body: 'Failed! ${DEFAULT_CONTENT}',
+			    subject: '${PROJECT_NAME} - Build # ${BUILD_NUMBER} - ${BUILD_STATUS}!'
+		    }
+	    }
+}

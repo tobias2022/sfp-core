@@ -1,0 +1,64 @@
+pipeline { 
+    agent any 
+    tools {
+        terraform 'terraform'
+
+    }
+    parameters {
+		booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
+		booleanParam(name: 'destroy', defaultValue: false, description: 'Destroy Terraform build?')
+	}
+
+    options {
+		// Keep maximum 10 archievd artifacts
+		buildDiscarder(logRotator(numToKeepStr:'10', artifactNumToKeepStr:'10'))
+		// No simultaneous builds
+		disableConcurrentBuilds()
+		durabilityHint('MAX_SURVIVABILITY') // PERFORMANCE_OPTIMIZED or SURVIVABLE_NONATOMIC
+	}
+    
+	stages {
+        
+        stage('Terraform Plan') {
+            
+            steps {
+                withCredentials([string(credentialsId: 'access_key_easycrm', variable:'AWS_ACCESS_KEY'), string(credentialsId: 'secret_key_easycrm', variable:'AWS_SECRET_KEY')]){
+                    sh 'cd infra && terraform init'
+					sh 'cd infra && terraform plan -var="access_key=${AWS_ACCESS_KEY}" -var="secret_key=${AWS_SECRET_KEY}" -var-file=default.tfvars'
+                }
+            }
+
+        }
+        
+        
+
+        stage('Terraform Apply') {
+			when {
+				not {
+					equals expected: true, actual: params.destroy
+				}
+			} 
+
+			steps {
+                withCredentials([string(credentialsId: 'access_key_easycrm', variable:'AWS_ACCESS_KEY'), string(credentialsId: 'secret_key_easycrm', variable:'AWS_SECRET_KEY')]){
+                    sh 'ls -ltra'
+				    sh 'cd infra && terraform apply -var="access_key=$AWS_ACCESS_KEY" -var="secret_key=$AWS_SECRET_KEY" -var-file=default.tfvars -auto-approve > aws.txt'
+                }
+                sh "cd infra && terraform output > output.txt"
+			}
+		}
+
+        stage('Destroy') {
+			when {
+					equals expected: true, actual: params.destroy
+			}
+			
+			steps {
+				 
+				sh "cd infra"
+				sh "terraform destroy -var-file=${params.workspace}.tfvars --auto-approve"
+				
+			}
+		}       
+    }
+}

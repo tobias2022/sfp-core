@@ -1,0 +1,54 @@
+pipeline {
+	agent any
+	options {
+		// Keep maximum 10 archievd artifacts
+		buildDiscarder(logRotator(numToKeepStr:'10', artifactNumToKeepStr:'10'))
+		// No simultaneous builds
+		disableConcurrentBuilds()
+		durabilityHint('MAX_SURVIVABILITY') // PERFORMANCE_OPTIMIZED or SURVIVABLE_NONATOMIC
+	}
+    
+    stages {
+		stage('Sanity Check') {
+           steps {
+                   
+                echo 'Sanity Checking...'
+                script {
+                        timeout(time: 60, unit: 'MINUTES') {
+                        input "EASYCRM PRODUCTION STAND BY READY "
+                        }
+                    }
+            }
+        }
+
+        stage('Production Deploy') {
+            steps {
+				dir('./cicd') {
+				sh "/usr/local/bin/ecs deploy ECS-cluster-PROD ECS-service-PROD --image ECS-container-PROD tobias2022/easycrm:latest --timeout 900"
+				// sh "ecs deploy ECS-cluster-PROD ECS-service-PROD --image ECS-container-PROD tobias2022/easycrm:latest --timeout 900"
+				}   
+            }    
+        }
+	}
+
+    post {
+		success {
+			// bitbucketStatusNotify(buildState: 'SUCCESSFUL')
+			echo 'Success.'
+			emailext attachLog: false,
+			to: "${EASYCRM_DEVELOPERS}, cc:${CC_RECIPIENTS}",
+			replyTo: "${DEVOPS_TEAM}",
+			body: 'Success! ${DEFAULT_CONTENT}',
+			subject:'${PROJECT_NAME} - Build # ${BUILD_NUMBER} - ${BUILD_STATUS}!'
+		}
+		failure {
+			// bitbucketStatusNotify(buildState: 'FAILED')
+			echo 'Failure.'
+			emailext attachLog: true,
+			to: "${EASYCRM_DEVELOPERS}, cc:${CC_RECIPIENTS}",
+			replyTo: "${DEVOPS_TEAM}",
+			body: 'Failed! ${DEFAULT_CONTENT}',
+			subject: '${PROJECT_NAME} - Build # ${BUILD_NUMBER} - ${BUILD_STATUS}!'
+		}
+	}
+}
