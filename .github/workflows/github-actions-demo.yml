@@ -25,7 +25,6 @@ jobs:
       - name: npm install and build webapp
         run: |
           npm install
-          npm build
       - uses: actions/upload-artifact@main
         with:
           name: webapp artifacts
