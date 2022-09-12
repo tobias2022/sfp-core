@@ -27,5 +27,5 @@ jobs:
           npm install
       - uses: actions/upload-artifact@main
         with:
-          name: webapp artifacts
-          path: public/
+          name: webappartifacts
+          path: ./**
