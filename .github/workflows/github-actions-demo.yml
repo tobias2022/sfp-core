@@ -1,1 +1,32 @@
+name: EasyCRM CI 
 
+on:
+  push:
+    branches:
+      - dev
+
+env:
+  DOCKER_IMAGE_NAME: tobias2022-azure-easycrm # Must not exist as a package associated with a different repo!
+  IMAGE_REGISTRY_URL: docker.pkg.github.com
+  #################################################
+  ### USER PROVIDED VALUES ARE REQUIRED BELOW   ###
+  #################################################
+  #################################################
+  ### REPLACE USERNAME WITH GH USERNAME         ###
+  AZURE_WEBAPP_NAME: tobias2022-ttt-app
+  #################################################
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: npm install and build webapp
+        run: |
+          npm install
+          npm run build
+      - uses: actions/upload-artifact@main
+        with:
+          name: webapp artifacts
+          path: public/
