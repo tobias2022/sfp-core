@@ -4,8 +4,11 @@ on:
   workflow_dispatch
     inputs:
       AZURE_RESOURCE_GROUP:
+        default: "true"
       AZURE_APP_PLAN:
-      AZURE_LOCATION: 
+        default: "true"
+      AZURE_LOCATION:
+        default: "true"
 
 env: 
   AZURE_WEBAPP_NAME: tobias2022-easycrm-app
