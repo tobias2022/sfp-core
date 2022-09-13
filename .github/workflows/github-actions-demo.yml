@@ -13,7 +13,7 @@ env:
   #################################################
   #################################################
   ### REPLACE USERNAME WITH GH USERNAME         ###
-  AZURE_WEBAPP_NAME: tobias2022-ttt-app
+  AZURE_WEBAPP_NAME: tobias2022-easycrm-app
   #################################################
 
 jobs:
@@ -49,3 +49,23 @@ jobs:
         with:
           repo-token: ${{secrets.GITHUB_TOKEN}}
           image-name: ${{env.DOCKER_IMAGE_NAME}}
+      
+  Deploy-to-Azure:
+    runs-on: ubuntu-latest
+    needs: Build-Docker-Image
+    name: Deploy app container to Azure
+    steps:
+      - name: "Login via Azure CLI"
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+  
+   - name: Deploy web app container
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{env.AZURE_WEBAPP_NAME}}
+          images: ${{env.IMAGE_REGISTRY_URL}}/${{ github.repository }}/${{env.DOCKER_IMAGE_NAME}}:${{ github.sha }}
+
+      - name: Azure logout
+        run: |
+          az logout
