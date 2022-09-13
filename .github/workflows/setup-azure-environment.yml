@@ -1,0 +1,41 @@
+name: Set up Azure environment 
+
+on:
+  workflow_dispatch:
+    inpusts:
+      AZURE_RESOURCE_GROUP: 
+      AZURE_APP_PLAN: 
+      AZURE_LOCATION: 
+
+env: 
+  AZURE_WEBAPP_NAME: tobias2022-easycrm-app
+
+jobs:
+  setup-up-azure-resources:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Azure resource group
+        if: success()
+        run: |
+          az group create --location ${{ github.event.inputs.AZURE_LOCATION }} --name ${{ github.event.inputs.AZURE_RESOURCE_GROUP }} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      - name: Create Azure app service plan
+        if: success()
+        run: |
+          az appservice plan create --resource-group ${{ github.event.inputs.AZURE_RESOURCE_GROUP }} --name ${{ github.event.inputs.AZURE_APP_PLAN }} --is-linux --sku F1 --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      - name: Create webapp resource
+        if: success()
+        run: |
+          az webapp create --resource-group ${{ github.event.inputs.AZURE_RESOURCE_GROUP }} --plan ${{ github.event.inputs.AZURE_APP_PLAN }} --name ${{ env.AZURE_WEBAPP_NAME }}  --deployment-container-image-name nginx --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      - name: Configure webapp to use GitHub Packages
+        if: success()
+        run: |
+          az webapp config container set --docker-custom-image-name nginx --docker-registry-server-password ${{secrets.GITHUB_TOKEN}} --docker-registry-server-url https://docker.pkg.github.com --docker-registry-server-user ${{github.actor}} --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ github.event.inputs.AZURE_RESOURCE_GROUP }} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
