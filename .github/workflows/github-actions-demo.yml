@@ -29,3 +29,17 @@ jobs:
         with:
           name: webappartifacts
           path: ./**
+  
+  Build-Docker-Image:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Build image and store in GitHub Packages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Download built artifact
+        uses: actions/download-artifact@main
+        with:
+          name: webappartifacts
+          path: public
