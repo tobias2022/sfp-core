@@ -1,7 +1,7 @@
 name: Set up Azure environment 
 
 on:
-  workflow_dispatch:
+  workflow_dispatch
     inpusts:
       AZURE_RESOURCE_GROUP:
         required: true
