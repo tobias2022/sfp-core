@@ -1,7 +1,7 @@
 name: Set up Azure environment 
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
     inputs:
       AZURE_RESOURCE_GROUP:
         default: "true"
