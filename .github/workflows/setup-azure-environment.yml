@@ -7,14 +7,7 @@ on:
         description: 'test'
         required: false
         default: 'test'
-      AZURE_APP_PLAN:
-        description: 'test'
-        required: false
-        default: 'test'
-      AZURE_LOCATION:
-        description: 'test'
-        required: false
-        default: 'test'
+      
 env: 
   AZURE_WEBAPP_NAME: tobias2022-easycrm-app
 
