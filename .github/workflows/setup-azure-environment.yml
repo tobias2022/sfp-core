@@ -2,11 +2,10 @@ name: Set up Azure environment
 
 on:
   workflow_dispatch
-    inpusts:
-      resources:
-        AZURE_RESOURCE_GROUP:
-        AZURE_APP_PLAN:
-        AZURE_LOCATION: 
+    inputs:
+      AZURE_RESOURCE_GROUP:
+      AZURE_APP_PLAN:
+      AZURE_LOCATION: 
 
 env: 
   AZURE_WEBAPP_NAME: tobias2022-easycrm-app
